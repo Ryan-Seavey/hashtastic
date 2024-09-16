@@ -36,7 +36,7 @@ class RyHash{
     static std::uniform_int_distribution<unsigned long long> distribution;
 
     static std::string sentence(unsigned long long);
-    static std::string hashInt(unsigned long long x[], size_t max);
+    static std::string hashInt(std::vector<unsigned long long> x, size_t max);
 
     //Hasher for all plain-old-data structures and atomics and the like.
     template <class basicType>
@@ -49,8 +49,9 @@ class RyHash{
     //Hasher for everything else. Nothing is guaranteed.
     template <class arbitraryType>
     static std::string hashObject(arbitraryType) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>));
-public:
+
     static std::string hashNormal(const std::string&);
+public:
 
     template <class arbitraryType>
     static std::string hash(arbitraryType a){return hashObject<arbitraryType>(a);}
@@ -141,12 +142,12 @@ cstring RyHash::punctuation[] = {
 std::string RyHash::hashNormal(const std::string& x) {
     unsigned long long newOrleans = x.length();
     unsigned long long meat{};
-    for(int z = 0; z < x.length(); z++){
-        meat += static_cast<unsigned long long>((static_cast<int>(x[z])) * (std::numbers::e * ((z + 0.1)*10)));
+    for(size_t z = 0; z < x.length(); z++){
+        meat += static_cast<unsigned long long>((static_cast<float>(x[z])) * (std::numbers::e_v<float> * ((static_cast<float>(z) + 0.1f)*10.0f)));
         meat ^= static_cast<unsigned long long>(std::tgamma((static_cast<int>(x[z]))));
     }
     for(int i = 10; i != 0; --i){
-        if(newOrleans % i == 0) newOrleans ^= static_cast<int>(std::pow<unsigned long long,int>(newOrleans, i));
+        if(newOrleans % static_cast<unsigned long long>(i) == 0) newOrleans ^= static_cast<unsigned long long>(std::pow<unsigned long long,int>(newOrleans, i));
     }
 
     return sentence(meat ^ newOrleans);
@@ -156,8 +157,8 @@ template <class basicType>
 std::string RyHash::hashObject(basicType yummy) requires std::semiregular<basicType> && (not HasDataFunction<basicType>) {
     unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(&yummy));
     size_t max = sizeof(basicType);
-    unsigned long long wrapper[max];
-    for(int x = 0; x < max; ++x){
+    std::vector<unsigned long long> wrapper(max);
+    for(size_t x = 0; x < max; ++x){
         wrapper[x] = static_cast<unsigned long long>(yes[x]);
     }
     return hashInt(wrapper, max);
@@ -167,8 +168,8 @@ template <HasDataFunction complexTypeWithData>
 std::string RyHash::hashObject(complexTypeWithData yummy) requires HasDataFunction<complexTypeWithData>{
     unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(yummy.data()));
     size_t max = yummy.size();
-    unsigned long long wrapper[max];
-    for(int x = 0; x < max; ++x){
+    std::vector<unsigned long long> wrapper(max);
+    for(size_t x = 0; x < max; ++x){
         wrapper[x] = static_cast<unsigned long long>(yes[x]);
     }
     return hashInt(wrapper, max);
@@ -179,22 +180,22 @@ template <class arbitraryType>
 std::string RyHash::hashObject(arbitraryType yummy) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>)){
     unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(&yummy));
     size_t max = sizeof(arbitraryType);
-    unsigned long long wrapper[max];
-    for(int x = 0; x < max; ++x){
+    std::vector<unsigned long long> wrapper(max);
+    for(size_t x = 0; x < max; ++x){
         wrapper[x] = static_cast<unsigned long long>(yes[x]);
     }
     return hashInt(wrapper, max);
 }
 
-std::string RyHash::hashInt(unsigned long long x[], size_t max) {
+std::string RyHash::hashInt(std::vector<unsigned long long> x, size_t max) {
     unsigned long long newOrleans = max;
     unsigned long long meat{};
-    for(int z = 0; z < max; z++){
-        meat += static_cast<unsigned long long>((static_cast<int>(x[z])) * (std::numbers::e * ((z + 0.1)*10)));
+    for(size_t z = 0; z < max; z++){
+        meat += static_cast<unsigned long long>((static_cast<float>(x[z])) * (std::numbers::e_v<float> * ((static_cast<float>(z) + 0.1f)*10.0f)));
         meat ^= static_cast<unsigned long long>(std::tgamma((static_cast<int>(x[z]))));
     }
     for(int i = 10; i != 0; --i){
-        if(newOrleans % i == 0) newOrleans ^= static_cast<int>(std::pow<unsigned long long,int>(newOrleans, i));
+        if(newOrleans % static_cast<unsigned long long>(i) == 0) newOrleans ^= static_cast<unsigned long long>(std::pow<unsigned long long,int>(newOrleans, i));
     }
 
     return sentence(meat ^ newOrleans);
@@ -203,7 +204,7 @@ std::string RyHash::hashInt(unsigned long long x[], size_t max) {
 std::string RyHash::sentence(unsigned long long key) {
     generator.seed(key);
     key = distribution(generator);
-#define calc(n) (std::rotl(key, n) % MSBS % 10)
+#define calc(n) (std::rotl(key, static_cast<int>(n)) % MSBS % 10)
     unsigned long long z = key % 100;
     std::string superString{adjectives[calc(z)]};
     z++;

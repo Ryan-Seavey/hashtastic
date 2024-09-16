@@ -7,9 +7,9 @@ int main() {
     std::cout << RyHash::hash<std::string>("dog")<< '\n';
     std::cout << RyHash::hash<std::string>("bog")<< '\n';
     std::cout << RyHash::hash<std::string>("dog") << '\n';
-    std::cout << RyHash::hash<std::string>("fuck") << '\n';
-    std::cout << RyHash::hash<char*>((char*)"fuck") << '\n';
-    std::cout << RyHash::hash<char*>((char*)"fuck") << '\n';
+    std::cout << RyHash::hash<std::string>("owie") << '\n';
+    std::cout << RyHash::hash<const char*>(static_cast<const char*>("owie")) << '\n';
+    std::cout << RyHash::hash<const char*>(static_cast<const char*>("owie")) << '\n';
 
     std::cout << RyHash::hash<int>(1)<< '\n';
     std::cout << RyHash::hash<bool>(true)<< '\n';
