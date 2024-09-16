@@ -9,9 +9,16 @@
 #include <numbers>
 #include <random>
 #include <array>
+#include <concepts>
 
 using cstring = const std::string;
 #define ss static cstring
+
+template <typename T>
+concept HasDataFunction = requires(T t) {
+    { t.data() } -> std::convertible_to<const void*>;
+    { t.length() } -> std::convertible_to<size_t const>;
+};
 
 class RyHash{
     //MAX_SENTENCE_BANK_SIZE
@@ -31,8 +38,17 @@ class RyHash{
     static std::string sentence(unsigned long long);
     static std::string hashInt(unsigned long long x[], size_t max);
 
-    template <class sizeCheck>
-    static std::string hashObject(sizeCheck);
+    //Hasher for all plain-old-data structures and atomics and the like.
+    template <class basicType>
+    static std::string hashObject(basicType) requires std::semiregular<basicType> && (not HasDataFunction<basicType>);
+
+    //Hasher for all complex items which have a .data() function for accessing the POD.
+    template <HasDataFunction complexTypeWithData>
+    static std::string hashObject(complexTypeWithData) requires HasDataFunction<complexTypeWithData>;
+
+    //Hasher for everything else. Nothing is guaranteed.
+    template <class arbitraryType>
+    static std::string hashObject(arbitraryType) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>));
 public:
     static std::string hashNormal(const std::string&);
 
@@ -136,10 +152,33 @@ std::string RyHash::hashNormal(const std::string& x) {
     return sentence(meat ^ newOrleans);
 }
 
-template <class sizeCheck>
-std::string RyHash::hashObject(sizeCheck yummy) {
+template <class basicType>
+std::string RyHash::hashObject(basicType yummy) requires std::semiregular<basicType> && (not HasDataFunction<basicType>) {
     unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(&yummy));
-    size_t max = sizeof(sizeCheck);
+    size_t max = sizeof(basicType);
+    unsigned long long wrapper[max];
+    for(int x = 0; x < max; ++x){
+        wrapper[x] = static_cast<unsigned long long>(yes[x]);
+    }
+    return hashInt(wrapper, max);
+}
+
+template <HasDataFunction complexTypeWithData>
+std::string RyHash::hashObject(complexTypeWithData yummy) requires HasDataFunction<complexTypeWithData>{
+    unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(yummy.data()));
+    size_t max = yummy.size();
+    unsigned long long wrapper[max];
+    for(int x = 0; x < max; ++x){
+        wrapper[x] = static_cast<unsigned long long>(yes[x]);
+    }
+    return hashInt(wrapper, max);
+}
+
+
+template <class arbitraryType>
+std::string RyHash::hashObject(arbitraryType yummy) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>)){
+    unsigned char * yes = static_cast<unsigned char *>(static_cast<void *>(&yummy));
+    size_t max = sizeof(arbitraryType);
     unsigned long long wrapper[max];
     for(int x = 0; x < max; ++x){
         wrapper[x] = static_cast<unsigned long long>(yes[x]);
