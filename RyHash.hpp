@@ -12,6 +12,7 @@
 #include <concepts>
 
 using cstring = const std::string;
+using cvec = std::vector<std::vector<std::string>>;
 #define ss static cstring
 
 template <typename T>
@@ -22,15 +23,18 @@ concept HasDataFunction = requires(T t) {
 
 class RyHash{
     //MAX_SENTENCE_BANK_SIZE
-    static constexpr int MSBS = 9;
+    static const int MSBS;
+    enum{
+        places,
+        people,
+        adjectives,
+        prepositions,
+        verbs,
+        adverbs,
+        punctuation,
+    };
+    static cvec dictionary;
 
-    ss places[];
-    ss people[];
-    ss adjectives[];
-    ss prepositions[];
-    ss verbs[];
-    ss adverbs[];
-    ss punctuation[];
 
     static std::mt19937_64 generator;
     static std::uniform_int_distribution<unsigned long long> distribution;
@@ -60,84 +64,86 @@ public:
 std::mt19937_64 RyHash::generator{};
 std::uniform_int_distribution<unsigned long long> RyHash::distribution{UINT64_MAX+1,UINT64_MAX};
 
-cstring RyHash::places[] = {
-        "School",
-        "University",
-        "Hell",
-        "Store",
-        "Classroom",
-        "Bus",
-        "Car",
-        "Airplane",
-        "JailCell"
-};
-cstring RyHash::people[] = {
-        "Pete",
-        "Dr.Sellers",
-        "TomPetty",
-        "Miguel",
-        "Katie",
-        "Carrot",
-        "Parker",
-        "Johninator",
-        "Timmy"
-};
-cstring RyHash::adjectives[] ={
-        "Fat",
-        "Ugly",
-        "Silly",
-        "Radical",
-        "Eccentric",
-        "Stinky",
-        "Godly",
-        "Unusual",
-        "Suspicious",
-};
-cstring RyHash::prepositions[] = {
-        "To",
-        "From",
-        "By",
-        "ByWayOf",
-        "Through",
-        "Around",
-        "About",
-        "Out",
-        "OutOf",
-};
-cstring RyHash::verbs[] = {
-        "Walks",
-        "Talks",
-        "Barks",
-        "Screams",
-        "Perambulates",
-        "PicksUp",
-        "Drops",
-        "Drives",
-        "Lectures"
-};
-cstring RyHash::adverbs[] = {
-        "Gaily",
-        "Lethargically",
-        "Quietly",
-        "Unfortunately",
-        "Cleverly",
-        "Horribly",
-        "Recklessly",
-        "Casually",
-        "Wonderfully"
+cvec RyHash::dictionary{
+        { //Adjectives
+                "Fat",
+                "Ugly",
+                "Silly",
+                "Radical",
+                "Eccentric",
+                "Stinky",
+                "Godly",
+                "Unusual",
+                "Suspicious",
+        },
+        { //People
+                "Pete",
+                "Dr.Sellers",
+                "TomPetty",
+                "Miguel",
+                "Katie",
+                "Carrot",
+                "Parker",
+                "Johninator",
+                "Timmy"
+        },
+        { //Adverbs
+                "Gaily",
+                "Lethargically",
+                "Quietly",
+                "Unfortunately",
+                "Cleverly",
+                "Horribly",
+                "Recklessly",
+                "Casually",
+                "Wonderfully"
+        },
+        { //Verbs
+                "Walks",
+                "Talks",
+                "Barks",
+                "Screams",
+                "Perambulates",
+                "PicksUp",
+                "Drops",
+                "Drives",
+                "Lectures"
+        },
+        { //Prepositions
+                "To",
+                "From",
+                "By",
+                "ByWayOf",
+                "Through",
+                "Around",
+                "About",
+                "Out",
+                "OutOf",
+        },
+        { //Places
+                "School",
+                "University",
+                "Hell",
+                "Store",
+                "Classroom",
+                "Bus",
+                "Car",
+                "Airplane",
+                "JailCell"
+        },
+        {//Punctuation
+                ".",
+                "!",
+                "?",
+                "!?",
+                ";",
+                ",",
+                "~",
+                "...",
+                "..?"
+        }
 };
 
-cstring RyHash::punctuation[] = {
-        ".",
-        "!",
-        "?",
-        "!?",
-        ";",
-        ",",
-        "~",
-        "...",
-        "..?"
-};
 
 std::string RyHash::hashNormal(const std::string& x) {
     unsigned long long newOrleans = x.length();
@@ -204,21 +210,12 @@ std::string RyHash::hashInt(std::vector<unsigned long long> x, size_t max) {
 std::string RyHash::sentence(unsigned long long key) {
     generator.seed(key);
     key = distribution(generator);
-#define calc(n) (std::rotl(key, static_cast<int>(n)) % MSBS % 10)
+#define calc(n,l) (std::rotl(key, static_cast<int>(n)) % l % 10)
     unsigned long long z = key % 100;
-    std::string superString{adjectives[calc(z)]};
-    z++;
-    superString +=  people[calc(z)];
-    z++;
-    superString += adverbs[calc(z)];
-    z++;
-    superString += verbs[calc(z)];
-    z-=10;
-    superString += prepositions[calc(z)];
-    z-=20;
-    superString += places[calc(z)];
-    z-=30;
-    superString += punctuation[calc(z)];
+    std::string superString;
+    for (const auto& chapter : RyHash::dictionary) {
+        superString += chapter.at(calc(z,chapter.size()));
+    }
 #undef calc
     return superString;
 }
