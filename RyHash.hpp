@@ -12,7 +12,7 @@
 #include <concepts>
 
 using cstring = const std::string;
-using cvec = std::vector<std::vector<std::string>>;
+using cvec = const std::vector<std::vector<std::string>>;
 #define ss static cstring
 
 template <typename T>
