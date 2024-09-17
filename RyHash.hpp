@@ -78,7 +78,7 @@ cstring RyHash::people[] = {
         "Miguel",
         "Katie",
         "Carrot",
-        "Adolf",
+        "Parker",
         "Johninator",
         "Timmy"
 };
