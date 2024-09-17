@@ -1,26 +1,18 @@
 #include <iostream>
-
+#include <cassert>
 #include "RyHash.hpp"
 #define quick(T,arg) std::cout << RyHash::hash<T>(arg) << '\n'
+#define sassert(T,arg) quick(T,arg); assert((RyHash::hash<T>(arg) == RyHash::hash<T>(arg)))
 
 int main() {
-    std::cout << RyHash::hash<std::string>("dog")<< '\n';
-    std::cout << RyHash::hash<std::string>("bog")<< '\n';
-    std::cout << RyHash::hash<std::string>("dog") << '\n';
-    std::cout << RyHash::hash<std::string>("owie") << '\n';
-    std::cout << RyHash::hash<const char*>(static_cast<const char*>("owie")) << '\n';
-    std::cout << RyHash::hash<const char*>(static_cast<const char*>("owie")) << '\n';
-
-    std::cout << RyHash::hash<int>(1)<< '\n';
-    std::cout << RyHash::hash<bool>(true)<< '\n';
-    std::cout << RyHash::hash<int>(1) << '\n';
-    std::cout << RyHash::hash<char>('\1') << '\n';
-    quick(int,4);
-//    std::cout << RyHash::hashNormal("dog") << '\n';
-//    std::cout << RyHash::hashNormal("bog") << '\n';
-//    std::cout << RyHash::hashNormal("zog") << '\n';
-//    std::cout << RyHash::hashNormal("dob") << '\n';
-//    std::cout << RyHash::hashNormal("Mikey") << '\n';
-//    std::cout << RyHash::hashNormal("dog") << '\n';
+    sassert(std::string, "bog");
+    sassert(std::string, "fog");
+    sassert(std::string, "bog");
+    sassert(const char*,"owie");
+    sassert(const char*,"owie");
+    sassert(int, 1);
+    sassert(bool, true);
+    sassert(int, 1);
+    sassert(char, '\1');
     return 0;
 }
