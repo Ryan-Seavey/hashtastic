@@ -24,15 +24,6 @@ concept HasDataFunction = requires(T t) {
 class RyHash{
     //MAX_SENTENCE_BANK_SIZE
     static const int MSBS;
-    enum{
-        places,
-        people,
-        adjectives,
-        prepositions,
-        verbs,
-        adverbs,
-        punctuation,
-    };
     static cvec dictionary;
 
 
