@@ -8,4 +8,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow -Wcast-align -Wfloat-equal -Wpo
 
 add_executable(hashma main.cpp
         RyHash.hpp
-        SortUtils.hpp)
+        RyCipher.hpp)
