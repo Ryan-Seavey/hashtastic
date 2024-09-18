@@ -2,6 +2,8 @@
 // Created by ryanseavey on 9/12/24.
 //
 //export module RyHash;
+#ifndef HASHMA_RYHASH
+#define HASHMA_RYHASH
 
 #include <string>
 #include <cmath>
@@ -210,3 +212,5 @@ std::string RyHash::sentence(unsigned long long key) {
 #undef calc
     return superString;
 }
+
+#endif
