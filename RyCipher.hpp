@@ -8,6 +8,7 @@
 #include <string>
 #include <concepts>
 #include <tuple>
+#include <memory>
 
 template<typename T>
 concept PODType = std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>;
@@ -26,7 +27,7 @@ class RyCipher {
 
     static unsigned char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
-    static unsigned char * transform(unsigned char *evil_type, const size_t decSize);
+    static unsigned char * transform(unsigned char *evil_type, const size_t decSize, bool removePadding);
 
     template <class Type, class keyType>
     static std::tuple<void*,size_t,void*,size_t> makeSenseOfThis(Type encrypt_me, keyType key);
@@ -56,9 +57,10 @@ unsigned char * RyCipher::Vigenere(unsigned char *evil_type, const unsigned char
     return evil_type;
 }
 
-unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSize) {
-    int lengthWidth = std::ceil(std::sqrt(decSize));
-    std::vector<unsigned char *> write_to_me;
+unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding) {
+    const int true_N = std::ceil(std::sqrt(decSize));
+    const int true_N_sq = true_N * true_N;
+
     return nullptr;
 }
 
@@ -98,10 +100,10 @@ std::tuple<void*,size_t,void*,size_t> RyCipher::makeSenseOfThis(Type encrypt_me,
     }
     //Handle the Key Type
     if constexpr (PODType<Type> || NoneOfTheAbove<Type>){
-        std::get<2>(true_evil) = static_cast<void *>(encrypt_me);
+        std::get<2>(true_evil) = static_cast<void *>(key);
         std::get<3>(true_evil) = sizeof(encrypt_me);
     } else if constexpr (HasDataFunction<Type>) {
-        std::get<2>(true_evil) = static_cast<void *>(encrypt_me.data());
+        std::get<2>(true_evil) = static_cast<void *>(key.data());
         std::get<3>(true_evil) = encrypt_me.size();
     }
 
