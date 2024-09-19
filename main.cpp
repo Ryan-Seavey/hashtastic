@@ -9,7 +9,7 @@
 int main() {
     std::string secretText = RyCipher::encode<std::string,std::string>("super_secret","key");
     std::cout << secretText << '\n';
-    std::string newText = RyCipher::decode<const char *, std::string>(secretText, "key");
-    std::cout << newText;
+    std::cout << RyCipher::decode<std::string, std::string>(secretText, "key");
+
     return 0;
 }
