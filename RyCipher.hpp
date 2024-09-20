@@ -20,18 +20,20 @@ concept NoneOfTheAbove = !PODType<T> && !HasDataFunction<T>;
 using std::get;
 
 class RyCipher {
-    static constexpr unsigned char VIG_OFFSET = 'a';
+    static constexpr unsigned char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
     [[nodiscard]] static Type code(Type encrypt_me, keyType key, bool decode);
 
     static unsigned char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
-    static unsigned char * transform(unsigned char *evil_type, const size_t decSize, bool removePadding);
+    static unsigned char * transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
 
     template <class Type, class keyType>
     static std::tuple<void*,size_t,void*,size_t> makeSenseOfThis(Type encrypt_me, keyType key);
 
+    static constexpr unsigned short BLOCK_SIZE = 9;
+    static constexpr unsigned short BLOCK_WIDTH = 3;
 
 public:
 
@@ -57,17 +59,16 @@ unsigned char * RyCipher::Vigenere(unsigned char *evil_type, const unsigned char
     return evil_type;
 }
 
-unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding) {
-    const int true_N = std::ceil(std::sqrt(decSize));
-    const int true_N_sq = true_N * true_N;
+unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize, unsigned short blockWidth) {
+
 
     return nullptr;
 }
 
 template<class encType, class keyType>
 encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
-    unsigned char *evil_type{};
-    unsigned char *evil_key{};
+    unsigned char * evil_type;
+    unsigned char *evil_key;
     auto carrier_of_evil = makeSenseOfThis(encrypt_me, key);
 
     evil_type = static_cast<unsigned char *>(get<0>(carrier_of_evil));
@@ -101,10 +102,10 @@ std::tuple<void*,size_t,void*,size_t> RyCipher::makeSenseOfThis(Type encrypt_me,
     //Handle the Key Type
     if constexpr (PODType<Type> || NoneOfTheAbove<Type>){
         std::get<2>(true_evil) = static_cast<void *>(key);
-        std::get<3>(true_evil) = sizeof(encrypt_me);
+        std::get<3>(true_evil) = sizeof(key);
     } else if constexpr (HasDataFunction<Type>) {
         std::get<2>(true_evil) = static_cast<void *>(key.data());
-        std::get<3>(true_evil) = encrypt_me.size();
+        std::get<3>(true_evil) = key.size();
     }
 
     return true_evil;
