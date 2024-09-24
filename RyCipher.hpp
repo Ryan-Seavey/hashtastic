@@ -30,7 +30,7 @@ class RyCipher {
     static unsigned char * transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
 
     template <class Type, class keyType>
-    static std::tuple<void*,size_t,void*,size_t> makeSenseOfThis(Type encrypt_me, keyType key);
+    static std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> makeSenseOfThis(Type encrypt_me, keyType key);
 
     static constexpr unsigned short BLOCK_SIZE = 9;
     static constexpr unsigned short BLOCK_WIDTH = 3;
@@ -67,47 +67,50 @@ unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSiz
 
 template<class encType, class keyType>
 encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
-    unsigned char * evil_type;
-    unsigned char *evil_key;
+    std::vector<unsigned char> evil_type;
+    std::vector<unsigned char> evil_key;
     auto carrier_of_evil = makeSenseOfThis(encrypt_me, key);
 
-    evil_type = static_cast<unsigned char *>(get<0>(carrier_of_evil));
-    evil_key = static_cast<unsigned char *>(get<2>(carrier_of_evil));
-    const size_t decSize = get<1>(carrier_of_evil), keySize = get<3>(carrier_of_evil);
+    evil_type = get<0>(carrier_of_evil);
+    evil_key = get<1>(carrier_of_evil);
+    const size_t decSize = evil_type.size(), keySize = evil_key.size();
 
-    evil_type = Vigenere(evil_type, evil_key, decSize, keySize, decode);
+    Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
 
     //evil_type = transform(evil_type, decSize);
 
     if constexpr (PODType<encType> || NoneOfTheAbove<encType>){
-        return reinterpret_cast<encType>(evil_type);
+        return reinterpret_cast<encType>(evil_type.data());
     } else if constexpr(std::is_same<encType, std::string>()) {
-        return {reinterpret_cast<const char *>(evil_type), decSize};
+        return {reinterpret_cast<const char *>(evil_type.data()), decSize};
     } else if constexpr(HasDataFunction<encType>) {
-        return {reinterpret_cast<encType>(evil_type), decSize};
+        return {reinterpret_cast<encType>(evil_type.data()), decSize};
     }
 }
 
 template<class Type, class keyType>
-std::tuple<void*,size_t,void*,size_t> RyCipher::makeSenseOfThis(Type encrypt_me, keyType key) {
-    std::tuple<void*,size_t,void*,size_t> true_evil{};
+std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> RyCipher::makeSenseOfThis(Type encrypt_me, keyType key) {
+    std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> true_evil{};
+    unsigned char * encrypt_me_data{}, * key_data{};
+    size_t encrypt_me_size{}, key_size{};
     //Handle the Text Type first
     if constexpr (PODType<Type> || NoneOfTheAbove<Type>){
-        std::get<0>(true_evil) = static_cast<void *>(encrypt_me);
-        std::get<1>(true_evil) = sizeof(encrypt_me);
+        encrypt_me_data =  reinterpret_cast<unsigned char *>(encrypt_me);
+        encrypt_me_size = sizeof(Type);
     } else if constexpr (HasDataFunction<Type>) {
-        std::get<0>(true_evil) = static_cast<void *>(encrypt_me.data());
-        std::get<1>(true_evil) = encrypt_me.size();
+        encrypt_me_data =  reinterpret_cast<unsigned char *>(encrypt_me.data());
+        encrypt_me_size = encrypt_me.size();
     }
+    std::get<0>(true_evil) = std::vector(encrypt_me_data, encrypt_me_data + encrypt_me_size);
     //Handle the Key Type
     if constexpr (PODType<Type> || NoneOfTheAbove<Type>){
-        std::get<2>(true_evil) = static_cast<void *>(key);
-        std::get<3>(true_evil) = sizeof(key);
+        key_data =  reinterpret_cast<unsigned char *>(key);
+        key_size = sizeof(keyType);
     } else if constexpr (HasDataFunction<Type>) {
-        std::get<2>(true_evil) = static_cast<void *>(key.data());
-        std::get<3>(true_evil) = key.size();
+        key_data =  reinterpret_cast<unsigned char *>(key.data());
+        key_size = key.size();
     }
-
+    std::get<1>(true_evil) = std::vector(key_data, key_data + key_size);
     return true_evil;
 }
 
