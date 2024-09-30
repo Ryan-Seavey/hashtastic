@@ -18,6 +18,7 @@ int main() {
     quick("welcometothebar")
     quick("welcometothebarn")
     quick("welcometothebarnYes")
+    quick("welcometothebar````")
 
     return 0;
 }

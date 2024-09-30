@@ -113,7 +113,7 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
 void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
     auto staging_post = evil_type.begin();
     while(staging_post != evil_type.end()) {
-        staging_post = std::find_if(evil_type.begin(), evil_type.end(), [](unsigned char x) {
+        staging_post = std::find_if(staging_post, evil_type.end(), [](unsigned char x) {
             return x == PADDING_START;
         });
         if(staging_post + 1 == evil_type.end()){
@@ -124,6 +124,7 @@ void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
             evil_type.erase(staging_post, evil_type.end());
             break;
         }
+        if(*(staging_post +1) == PADDING_START) staging_post++;
     }
     decSize = evil_type.size();
 }
