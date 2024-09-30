@@ -91,18 +91,18 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
 
     evil_type = get<0>(carrier_of_evil);
     evil_key = get<1>(carrier_of_evil);
-    const size_t decSize = evil_type.size(), keySize = evil_key.size();
+    size_t decSize = evil_type.size(), keySize = evil_key.size();
 
-    //Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
+    Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
 
-    auto [true_evil, newSize] = transform(evil_type.data(), decSize, decode);
+    std::tie(evil_type , decSize) = transform(evil_type.data(), decSize, decode);
 
     if constexpr (PODType<encType> || NoneOfTheAbove<encType>){
-        return reinterpret_cast<encType>(true_evil.data());
+        return reinterpret_cast<encType>(evil_type.data());
     } else if constexpr(std::is_same<encType, std::string>()) {
-        return {reinterpret_cast<const char *>(true_evil.data()), newSize};
+        return {reinterpret_cast<const char *>(evil_type.data()), decSize};
     } else if constexpr(HasDataFunction<encType>) {
-        return {reinterpret_cast<encType>(true_evil.data()), newSize};
+        return {reinterpret_cast<encType>(evil_type.data()), decSize};
     }
 }
 
