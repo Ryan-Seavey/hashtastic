@@ -18,8 +18,14 @@ template<typename T>
 concept NoneOfTheAbove = !PODType<T> && !HasDataFunction<T>;
 
 using std::get;
+using evil_container = std::vector<unsigned char>;
 
 class RyCipher {
+
+    static constexpr unsigned short BLOCK_WIDTH = 4;
+    static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
+    static constexpr unsigned char PADDING_START = '$';
+    static constexpr unsigned char PADDING_CONT = '$';
     static constexpr unsigned char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
@@ -27,14 +33,10 @@ class RyCipher {
 
     static unsigned char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
-    static unsigned char * transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
+    static std::tuple<evil_container, size_t>  transform(unsigned char *evil_type, const size_t vecSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
 
     template <class Type, class keyType>
-    static std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> makeSenseOfThis(Type encrypt_me, keyType key);
-
-    static constexpr unsigned short BLOCK_SIZE = 9;
-    static constexpr unsigned short BLOCK_WIDTH = 3;
-
+    static std::tuple<evil_container,evil_container> makeSenseOfThis(Type encrypt_me, keyType key);
 public:
 
     template <class encType, class keyType>
@@ -59,38 +61,54 @@ unsigned char * RyCipher::Vigenere(unsigned char *evil_type, const unsigned char
     return evil_type;
 }
 
-unsigned char *RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize, unsigned short blockWidth) {
+std::tuple<evil_container, size_t> RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize, unsigned short blockWidth) {
+    evil_container evil_within(evil_type, evil_type + decSize);
+    size_t vecSize = decSize;
+    if(not removePadding && vecSize % blockSize != 0) {
+        for (; vecSize % blockSize != 0; ++vecSize);
+        //TODO: optimize this garbage, and run speed tests thereon.
+        evil_within.emplace_back(PADDING_START);
+        evil_within.resize(vecSize, PADDING_CONT);
+    }
+    evil_container klone(vecSize);
+    for(int i = 0, currentBlockMax = blockSize, arrIndex = 0; i < vecSize && arrIndex < vecSize && currentBlockMax <= vecSize; ++i, currentBlockMax += blockSize){
+        for(int microTickCounter{}; microTickCounter < blockWidth; microTickCounter++)
+        for(int hop = currentBlockMax - blockSize + microTickCounter; hop < currentBlockMax; hop += blockWidth){
+            klone[hop] = evil_within[arrIndex];
+            arrIndex++;
+        }
+    }
 
 
-    return nullptr;
+    return {klone, vecSize};
 }
 
 template<class encType, class keyType>
 encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
-    std::vector<unsigned char> evil_type;
-    std::vector<unsigned char> evil_key;
+    evil_container evil_type;
+    evil_container evil_key;
     auto carrier_of_evil = makeSenseOfThis(encrypt_me, key);
 
     evil_type = get<0>(carrier_of_evil);
     evil_key = get<1>(carrier_of_evil);
     const size_t decSize = evil_type.size(), keySize = evil_key.size();
 
-    Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
+    //Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
 
-    //evil_type = transform(evil_type, decSize);
+    auto [true_evil, newSize] = transform(evil_type.data(), decSize, decode);
 
     if constexpr (PODType<encType> || NoneOfTheAbove<encType>){
-        return reinterpret_cast<encType>(evil_type.data());
+        return reinterpret_cast<encType>(true_evil.data());
     } else if constexpr(std::is_same<encType, std::string>()) {
-        return {reinterpret_cast<const char *>(evil_type.data()), decSize};
+        return {reinterpret_cast<const char *>(true_evil.data()), newSize};
     } else if constexpr(HasDataFunction<encType>) {
-        return {reinterpret_cast<encType>(evil_type.data()), decSize};
+        return {reinterpret_cast<encType>(true_evil.data()), newSize};
     }
 }
 
 template<class Type, class keyType>
-std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> RyCipher::makeSenseOfThis(Type encrypt_me, keyType key) {
-    std::tuple<std::vector<unsigned char>,std::vector<unsigned char>> true_evil{};
+std::tuple<evil_container,evil_container> RyCipher::makeSenseOfThis(Type encrypt_me, keyType key) {
+    std::tuple<evil_container,evil_container> true_evil{};
     unsigned char * encrypt_me_data{}, * key_data{};
     size_t encrypt_me_size{}, key_size{};
     //Handle the Text Type first
