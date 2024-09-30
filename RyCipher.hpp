@@ -24,7 +24,7 @@ class RyCipher {
 
     static constexpr unsigned short BLOCK_WIDTH = 4;
     static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
-    static constexpr unsigned char PADDING_START = '$';
+    static constexpr unsigned char PADDING_START = '`';
     static constexpr unsigned char PADDING_CONT = '$';
     static constexpr unsigned char VIG_OFFSET = 255;
 
@@ -48,6 +48,8 @@ public:
     [[nodiscard]] static decType decode(std::string cipherText, keyType key){
         return code<decType, keyType>(cipherText, key, true);
     }
+
+    static void TidyUp(evil_container &evil_type, size_t &size);
 };
 
 
@@ -93,9 +95,11 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
     evil_key = get<1>(carrier_of_evil);
     size_t decSize = evil_type.size(), keySize = evil_key.size();
 
+    std::tie(evil_type , decSize) = transform(evil_type.data(), decSize, decode);
+
     Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
 
-    std::tie(evil_type , decSize) = transform(evil_type.data(), decSize, decode);
+    TidyUp(evil_type, decSize);
 
     if constexpr (PODType<encType> || NoneOfTheAbove<encType>){
         return reinterpret_cast<encType>(evil_type.data());
@@ -104,6 +108,24 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
     } else if constexpr(HasDataFunction<encType>) {
         return {reinterpret_cast<encType>(evil_type.data()), decSize};
     }
+}
+
+void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
+    auto staging_post = evil_type.begin();
+    while(staging_post != evil_type.end()) {
+        staging_post = std::find_if(evil_type.begin(), evil_type.end(), [](unsigned char x) {
+            return x == PADDING_START;
+        });
+        if(staging_post + 1 == evil_type.end()){
+            evil_type.pop_back();
+            break;
+        }
+        if(*(staging_post + 1) == PADDING_CONT) {
+            evil_type.erase(staging_post, evil_type.end());
+            break;
+        }
+    }
+    decSize = evil_type.size();
 }
 
 template<class Type, class keyType>
