@@ -7,7 +7,7 @@
 #define sassert(T,arg) quick(T,arg); assert((RyHash::hash<T>(arg) == RyHash::hash<T>(arg)))
 
 int main() {
-    std::string secretText = RyCipher::encode<std::string,std::string>("The quick fox jumped over the lazy brown dog.","key");
+    std::string secretText = RyCipher::encode<std::string,std::string>("RidePolice","key");
     std::cout << secretText << '\n';
     std::cout << RyCipher::decode<std::string, std::string>(secretText, "key") << '\n';
 
