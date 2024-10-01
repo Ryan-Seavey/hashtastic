@@ -11,6 +11,7 @@
 #include <concepts>
 #include <tuple>
 #include <memory>
+#include <string>
 
 template<typename T>
 concept PODType = std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>;
@@ -22,17 +23,20 @@ concept NoneOfTheAbove = !PODType<T> && !HasDataFunction<T>;
 using std::get;
 using evil_container = std::vector<unsigned char>;
 using evil_char = unsigned char;
+using ull = unsigned long long;
+using namespace std::literals;
 
 class RyCipher {
-    static constexpr unsigned long long DEFAULT_PASSES = -1;
+    static constexpr unsigned long long DEFAULT_PASSES = 3;
     static constexpr unsigned short BLOCK_WIDTH = 4;
     static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
+    static constexpr unsigned short TIMEOUT_MAX = 256;
     static constexpr evil_char PADDING_START = '`';
     static constexpr evil_char PADDING_CONT = '$';
     static constexpr evil_char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
-    NDS Type code(Type encrypt_me, keyType key, bool decode, unsigned long long passes = DEFAULT_PASSES);
+    NDS Type code(Type encrypt_me, keyType key, bool decode, unsigned long long passes);
 
     static evil_char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
@@ -46,13 +50,13 @@ class RyCipher {
 public:
 
     template <class encType, class keyType>
-    [[nodiscard]] static std::string encode(encType encrypt_me, keyType key){
-        return code<encType, keyType>(encrypt_me, key, false);
+    [[nodiscard]] static std::string encode(encType encrypt_me, keyType key, ull passes = DEFAULT_PASSES){
+        return code<encType, keyType>(encrypt_me, key, false, passes);
     }
 
     template <class decType, class keyType>
-    [[nodiscard]] static decType decode(std::string cipherText, keyType key){
-        return code<decType, keyType>(cipherText, key, true);
+    [[nodiscard]] static decType decode(std::string cipherText, keyType key, ull passes = DEFAULT_PASSES){
+        return code<decType, keyType>(cipherText, key, true, passes);
     }
 };
 
@@ -113,6 +117,7 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode, unsigned lo
 
 void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
     auto staging_post = evil_type.begin();
+    unsigned short timeout{};
     while(staging_post != evil_type.end()) {
         staging_post = std::find_if(staging_post, evil_type.end(), [](unsigned char x) {
             return x == PADDING_START;
@@ -128,6 +133,8 @@ void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
         if(*(staging_post +1) == PADDING_START) staging_post++;
     }
     decSize = evil_type.size();
+    ++timeout;
+    if(timeout > TIMEOUT_MAX) throw std::runtime_error(("Timeout in TidyUp with "s + reinterpret_cast<char *>(evil_type.data())));
 }
 
 template<class Type, class keyType>
