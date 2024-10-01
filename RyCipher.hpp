@@ -24,7 +24,7 @@ using evil_container = std::vector<unsigned char>;
 using evil_char = unsigned char;
 
 class RyCipher {
-    static constexpr unsigned short DEFAULT_PASSES = 3;
+    static constexpr unsigned long long DEFAULT_PASSES = -1;
     static constexpr unsigned short BLOCK_WIDTH = 4;
     static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
     static constexpr evil_char PADDING_START = '`';
@@ -32,7 +32,7 @@ class RyCipher {
     static constexpr evil_char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
-    NDS Type code(Type encrypt_me, keyType key, bool decode, int passes = DEFAULT_PASSES);
+    NDS Type code(Type encrypt_me, keyType key, bool decode, unsigned long long passes = DEFAULT_PASSES);
 
     static evil_char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
@@ -87,7 +87,7 @@ void RyCipher::transform(evil_container &evil_type, size_t &decSize, bool remove
 }
 
 template<class encType, class keyType>
-encType RyCipher::code(encType encrypt_me, keyType key, bool decode, int passes) {
+encType RyCipher::code(encType encrypt_me, keyType key, bool decode, unsigned long long passes) {
     evil_container evil_type;
     evil_container evil_key;
     auto carrier_of_evil = makeSenseOfThis(encrypt_me, key);
