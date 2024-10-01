@@ -24,7 +24,7 @@ using evil_container = std::vector<unsigned char>;
 using evil_char = unsigned char;
 
 class RyCipher {
-
+    static constexpr unsigned short DEFAULT_PASSES = 3;
     static constexpr unsigned short BLOCK_WIDTH = 4;
     static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
     static constexpr evil_char PADDING_START = '`';
@@ -32,11 +32,11 @@ class RyCipher {
     static constexpr evil_char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
-    NDS Type code(Type encrypt_me, keyType key, bool decode);
+    NDS Type code(Type encrypt_me, keyType key, bool decode, int passes = DEFAULT_PASSES);
 
     static evil_char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
-    NDS std::tuple<evil_container, size_t>  transform(unsigned char *evil_type, const size_t vecSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
+    static void transform(evil_container &evil_type, size_t & decSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
 
     template <class Type, class keyType>
     NDS std::tuple<evil_container,evil_container> makeSenseOfThis(Type encrypt_me, keyType key);
@@ -67,30 +67,27 @@ unsigned char * RyCipher::Vigenere(unsigned char *evil_type, const unsigned char
     return evil_type;
 }
 
-std::tuple<evil_container, size_t> RyCipher::transform(unsigned char *evil_type, const size_t decSize, bool removePadding, unsigned short blockSize, unsigned short blockWidth) {
-    evil_container evil_within(evil_type, evil_type + decSize);
+void RyCipher::transform(evil_container &evil_type, size_t &decSize, bool removePadding, unsigned short blockSize, unsigned short blockWidth) {
     size_t vecSize = decSize;
     if(not removePadding && vecSize % blockSize != 0) {
         for (; vecSize % blockSize != 0; ++vecSize);
         //TODO: optimize this garbage, and run speed tests thereon.
-        evil_within.emplace_back(PADDING_START);
-        evil_within.resize(vecSize, PADDING_CONT);
+        evil_type.emplace_back(PADDING_START);
+        evil_type.resize(vecSize, PADDING_CONT);
     }
     evil_container klone(vecSize);
     for(int i = 0, currentBlockMax = blockSize, arrIndex = 0; i < vecSize && arrIndex < vecSize && currentBlockMax <= vecSize; ++i, currentBlockMax += blockSize){
         for(int microTickCounter{}; microTickCounter < blockWidth; microTickCounter++)
         for(int hop = currentBlockMax - blockSize + microTickCounter; hop < currentBlockMax; hop += blockWidth){
-            klone[hop] = evil_within[arrIndex];
+            klone[hop] = evil_type[arrIndex];
             arrIndex++;
         }
     }
 
-
-    return {klone, vecSize};
 }
 
 template<class encType, class keyType>
-encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
+encType RyCipher::code(encType encrypt_me, keyType key, bool decode, int passes) {
     evil_container evil_type;
     evil_container evil_key;
     auto carrier_of_evil = makeSenseOfThis(encrypt_me, key);
@@ -99,11 +96,11 @@ encType RyCipher::code(encType encrypt_me, keyType key, bool decode) {
     evil_key = get<1>(carrier_of_evil);
     size_t decSize = evil_type.size(), keySize = evil_key.size();
 
-    std::tie(evil_type , decSize) = transform(evil_type.data(), decSize, decode);
-
+    for (int i = 0; i < passes; ++i) {
+    transform(evil_type, decSize, decode);
     Vigenere(evil_type.data(), evil_key.data(), decSize, keySize, decode);
-
-    TidyUp(evil_type, decSize);
+    }
+    if(decode) TidyUp(evil_type, decSize);
 
     if constexpr (PODType<encType> || NoneOfTheAbove<encType>){
         return reinterpret_cast<encType>(evil_type.data());
