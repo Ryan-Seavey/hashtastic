@@ -5,6 +5,8 @@
 #ifndef HASHMA_RYCIPHER_HPP
 #define HASHMA_RYCIPHER_HPP
 
+#define NDS [[nodiscard]] static
+
 #include <string>
 #include <concepts>
 #include <tuple>
@@ -19,24 +21,28 @@ concept NoneOfTheAbove = !PODType<T> && !HasDataFunction<T>;
 
 using std::get;
 using evil_container = std::vector<unsigned char>;
+using evil_char = unsigned char;
 
 class RyCipher {
 
     static constexpr unsigned short BLOCK_WIDTH = 4;
     static constexpr unsigned short BLOCK_SIZE = BLOCK_WIDTH * BLOCK_WIDTH;
-    static constexpr unsigned char PADDING_START = '`';
-    static constexpr unsigned char PADDING_CONT = '$';
-    static constexpr unsigned char VIG_OFFSET = 255;
+    static constexpr evil_char PADDING_START = '`';
+    static constexpr evil_char PADDING_CONT = '$';
+    static constexpr evil_char VIG_OFFSET = 255;
 
     template <class Type, class keyType>
-    [[nodiscard]] static Type code(Type encrypt_me, keyType key, bool decode);
+    NDS Type code(Type encrypt_me, keyType key, bool decode);
 
-    static unsigned char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
+    static evil_char * Vigenere(unsigned char *evil_type, const unsigned char *evil_key, const size_t decSize, const size_t keySize, bool reverse);
 
-    static std::tuple<evil_container, size_t>  transform(unsigned char *evil_type, const size_t vecSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
+    NDS std::tuple<evil_container, size_t>  transform(unsigned char *evil_type, const size_t vecSize, bool removePadding, unsigned short blockSize = BLOCK_SIZE, unsigned short blockWidth = BLOCK_WIDTH);
 
     template <class Type, class keyType>
-    static std::tuple<evil_container,evil_container> makeSenseOfThis(Type encrypt_me, keyType key);
+    NDS std::tuple<evil_container,evil_container> makeSenseOfThis(Type encrypt_me, keyType key);
+
+    static void TidyUp(evil_container &evil_type, size_t &size);
+
 public:
 
     template <class encType, class keyType>
@@ -48,8 +54,6 @@ public:
     [[nodiscard]] static decType decode(std::string cipherText, keyType key){
         return code<decType, keyType>(cipherText, key, true);
     }
-
-    static void TidyUp(evil_container &evil_type, size_t &size);
 };
 
 
