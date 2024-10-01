@@ -19,6 +19,6 @@ int main() {
     quick("welcometothebarn")
     quick("welcometothebarnYes")
     quick("welcometothebar````")
-
+    quick("``$$welcometothebar````")
     return 0;
 }
