@@ -35,7 +35,7 @@ inline void quick(const std::string &str, ull y = 2){
 }
 
 int main() {
-    for(ull i = 0, j = 0; i < LONG_MAX; ++j, i = static_cast<ull>(std::pow(2, j))) {
+    for(ull i = 0, j = 0; i <= 65536; ++j, i = static_cast<ull>(std::pow(2, j))) {
         std::cout << std::setfill('-') << std::setw(width << 2) << std::endl;
         std::cout << "\nNow at: " << i << " passes." << std::endl;
         std::cout << std::setfill(' ') << std::left << std::setw(width) << "String name"
@@ -53,4 +53,5 @@ int main() {
         quick("welcometothebarnYes", i);
         quick("welcometothebar````", i);
     }
+    return 0;
 }
