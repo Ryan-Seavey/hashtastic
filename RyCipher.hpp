@@ -126,15 +126,15 @@ void RyCipher::TidyUp(evil_container &evil_type, size_t &decSize) {
             evil_type.pop_back();
             break;
         }
-        if(*(staging_post + 1) == PADDING_CONT) {
+        if( not (staging_post == evil_type.end()) && not (staging_post + 1 == evil_type.end()) && *(staging_post + 1) == PADDING_CONT ) {
             evil_type.erase(staging_post, evil_type.end());
             break;
         }
-        if(*(staging_post +1) == PADDING_START) staging_post++;
+        if( not (staging_post == evil_type.end()) && not (staging_post + 1 == evil_type.end()) && *(staging_post +1) == PADDING_START) staging_post++;
+        ++timeout;
+        if(timeout > TIMEOUT_MAX) throw std::runtime_error(("Timeout in TidyUp with "s + reinterpret_cast<char *>(evil_type.data())));
     }
     decSize = evil_type.size();
-    ++timeout;
-    if(timeout > TIMEOUT_MAX) throw std::runtime_error(("Timeout in TidyUp with "s + reinterpret_cast<char *>(evil_type.data())));
 }
 
 template<class Type, class keyType>
