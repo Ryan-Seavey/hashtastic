@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cassert>
-#include "RyHash.hpp"
+#include "RyHash.h++"
 #define quick(T,arg) std::cout << RyHash::hash<T>(arg) << '\n'
 #define sassert(T,arg) quick(T,arg); assert((RyHash::hash<T>(arg) == RyHash::hash<T>(arg)))
 

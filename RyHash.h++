@@ -12,9 +12,15 @@
 #include <random>
 #include <array>
 #include <concepts>
+#include <boost/math/special_functions/fibonacci.hpp>
+#include <boost/math/special_functions/factorials.hpp>
+#include <boost/multiprecision/cpp_bin_float.hpp>
+#include <climits>
 
 using cstring = const std::string;
 using cvec = const std::vector<std::vector<std::string>>;
+using cvfloat = boost::multiprecision::cpp_bin_float<200>;
+using hashVal = uint32_t;
 #define ss static cstring
 
 template <typename T>
@@ -22,6 +28,8 @@ concept HasDataFunction = requires(T t) {
     { t.data() } -> std::convertible_to<const void*>;
     { t.length() } -> std::convertible_to<size_t const>;
 };
+
+static constexpr std::array<cvfloat, 256> SELLERS{};
 
 class RyHash{
     //MAX_SENTENCE_BANK_SIZE
