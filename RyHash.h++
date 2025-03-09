@@ -29,43 +29,40 @@ concept HasDataFunction = requires(T t) {
     { t.length() } -> std::convertible_to<size_t const>;
 };
 
-static constexpr std::array<cvfloat, 256> SELLERS{};
-
-class RyHash{
+namespace RyHash{
     //MAX_SENTENCE_BANK_SIZE
-    static const int MSBS;
-    static cvec dictionary;
+    extern inline const int MSBS;
+    extern inline cvec dictionary;
 
 
-    static std::mt19937_64 generator;
-    static std::uniform_int_distribution<unsigned long long> distribution;
+    extern inline std::mt19937_64 generator;
+    extern inline std::uniform_int_distribution<unsigned long long> distribution;
 
-    static std::string sentence(unsigned long long);
-    static std::string hashInt(std::vector<unsigned long long> x, size_t max);
+    inline std::string sentence(unsigned long long);
+    inline std::string hashInt(std::vector<unsigned long long> x, size_t max);
 
     //Hasher for all plain-old-data structures and atomics and the like.
     template <class basicType>
-    static std::string hashObject(basicType) requires std::semiregular<basicType> && (not HasDataFunction<basicType>);
+    inline std::string hashObject(basicType) requires std::semiregular<basicType> && (not HasDataFunction<basicType>);
 
     //Hasher for all complex items which have a .data() function for accessing the POD.
     template <HasDataFunction complexTypeWithData>
-    static std::string hashObject(complexTypeWithData) requires HasDataFunction<complexTypeWithData>;
+    std::string hashObject(complexTypeWithData) requires HasDataFunction<complexTypeWithData>;
 
     //Hasher for everything else. Nothing is guaranteed.
     template <class arbitraryType>
-    static std::string hashObject(arbitraryType) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>));
+    std::string hashObject(arbitraryType) requires (not (std::semiregular<arbitraryType> || HasDataFunction<arbitraryType>));
 
-    static std::string hashNormal(const std::string&);
-public:
+    inline std::string hashNormal(const std::string&);
 
     template <class arbitraryType>
-    static std::string hash(arbitraryType a){return hashObject<arbitraryType>(a);}
+    std::string hash(arbitraryType a){return hashObject<arbitraryType>(a);}
 };
 
 std::mt19937_64 RyHash::generator{};
 std::uniform_int_distribution<unsigned long long> RyHash::distribution{UINT64_MAX+1,UINT64_MAX};
 
-cvec RyHash::dictionary{
+inline cvec RyHash::dictionary{
         { //Adjectives
                 "Fat",
                 "Ugly",
