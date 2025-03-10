@@ -21,7 +21,7 @@ int main(int argc, char ** argv){
     std::string strinput;
     std::vector<std::string> fpinput(1);
     unsigned requested_bits;
-
+    std::stringstream printMe;
     desc.add_options()
     ("help,h", "")
     ("file,f", opt::value<std::vector<std::string>>(&fpinput),"The path of the file(s) you wish to hash")
@@ -39,10 +39,16 @@ int main(int argc, char ** argv){
 
     if (vm.contains("help") || argc == 1) std::cout << desc;
 
+    //TODO: hash this
     if (vm.contains("string")) std::cout << "Here's stringinput!\n" << vm["string"].as<std::string>() << '\n';
 
-    std::cout << std::hex << RyHash::hashTime(RyHash::file_to_bytes(vm["f"].as<std::string>()), requested_bits) << '\n';
 
+    //TODO: put vm["file"] in a for-each loop
+    std::cout
+    << std::setiosflags(std::ios::uppercase) << std::hex
+    << std::setw((requested_bits + 3)/4) << std::setfill('0')
+    << RyHash::hashTime(RyHash::file_to_bytes(vm["file"].as<std::vector<std::string>>()[0]), requested_bits) << '\n';
+    //TODO: make some actually nicely formatted output.
 
     return 0;
 }

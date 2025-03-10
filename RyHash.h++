@@ -20,6 +20,7 @@
 #include <span>
 #include <filesystem>
 #include <fstream>
+#include "evilDictionary.c++"
 
 using cstring = const std::string;
 using cvec = const std::vector<std::vector<std::string>>;
@@ -31,13 +32,12 @@ using hashVal = uint32_t;
 namespace RyHash{
         //MAX_SENTENCE_BANK_SIZE
         extern inline const int MSBS;
-        extern inline cvec dictionary;
+        inline constexpr std::span dictionary{evil::dictionary, std::size(evil::dictionary)};
         inline constexpr size_t BLOCK_SIZE{64 * 1024}; //64k
 
-
-        extern inline boost::random::mt11213b RNG9000;
-        extern inline std::uniform_int_distribution<unsigned long long> distribution;
-
+        //Yeah, we're Advanced Computer Security guys, of course we violate SOLID!
+        template<class T>
+        std::enable_if_t<std::is_arithmetic_v<T>, T> getRandom(unsigned seed);
         extern inline std::vector<uint8_t> string_to_bytes(const std::string&);
         extern inline std::vector<uint8_t> file_to_bytes(const std::filesystem::path&);
 
@@ -48,25 +48,73 @@ namespace RyHash{
          * @return the spectacular hash!
          */
         extern inline u_int32_t hashTime(std::span<const uint8_t> hashMe, size_t bits);
+        /**
+         * This is where the magic happens!
+         * @param block what do you think?
+         * @note block's size does not matter.
+         */
+        extern inline void processBlock(std::span<uint8_t> block);
 }
 
-inline boost::random::mt11213b RyHash::RNG9000{2};
-inline std::uniform_int_distribution<unsigned long long> RyHash::distribution{};
 
 //REMEMBER: OUTPUT SHOULD BE A HEX NUMBER OF LENGTH 8! (40320)
 extern inline u_int32_t RyHash::hashTime(std::span<const uint8_t> hashMe, size_t bits)
 {
+        std::vector<uint8_t> theWholeEnchilada;
         //split cocksucker into parts.
         size_t bin_size = hashMe.size();
         //check divisibility
-        if (size_t rem{bin_size % BLOCK_SIZE})
+        float quotient = static_cast<float>(bin_size) / BLOCK_SIZE;
+        size_t numberOfBlocksWeWillNeed = std::ceil(quotient);
+        bool paddingNeeded = (numberOfBlocksWeWillNeed - static_cast<int>(quotient));
+
+        //reserve the space we will need.
+        theWholeEnchilada.reserve(numberOfBlocksWeWillNeed * BLOCK_SIZE);
+        //slap the entirety of hashMe into the true vector
+        std::ranges::copy(std::as_const(hashMe), std::insert_iterator(theWholeEnchilada, theWholeEnchilada.begin()));
+        if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
+
+        processBlock(theWholeEnchilada);
+        u_int32_t result{};
+        for (const auto& z : theWholeEnchilada)
         {
-
+                result += z;
+                result *= z;
         }
+        return result;
+}
 
+inline void RyHash::processBlock(std::span<uint8_t> block)
+{
+        auto half = block.begin() + block.size()/2;
+        auto bend = block.rend();
+        for (int i = 0; i < block.size(); ++i)
+        {
+                block[i] ^= getRandom<uint8_t>(block[i % block.size()]);
+                ++bend, ++half;
+                if (half == block.end()) half = block.begin();
+        }
+}
 
-
-        return 0xDEADBEEF;
+template<class T>
+std::enable_if_t<std::is_arithmetic_v<T>, T>
+RyHash::getRandom(const unsigned seed)
+{
+      thread_local boost::random::mt11213b engine;
+        if constexpr(std::is_integral_v<T>)
+        {
+                engine.seed(seed);
+                boost::random::uniform_int_distribution<T> dist;
+                //if (nobodyIsNull) dist.param(boost::random::uniform_int_distribution<T>(a,b));
+                return dist(engine);
+        } else if constexpr (std::is_floating_point_v<T>)
+        {
+                engine.seed(seed);
+                boost::random::uniform_real_distribution<T> dist;
+                //if (nobodyIsNull) dist.param(typename boost::random::uniform_real_distribution<T>::param_type(a,b));
+                return dist(engine);
+        }
+        return{};
 }
 
 
@@ -86,88 +134,6 @@ extern inline u_int32_t RyHash::hashTime(std::span<const uint8_t> hashMe, size_t
 
 
 
-
-
-
-inline cvec RyHash::dictionary{
-        { //Adjectives
-                "Fat",
-                "Ugly",
-                "Silly",
-                "Radical",
-                "Eccentric",
-                "Stinky",
-                "Godly",
-                "Unusual",
-                "Suspicious",
-        },
-        { //People
-                "Pete",
-                "Dr.Sellers",
-                "TomPetty",
-                "Miguel",
-                "Katie",
-                "Carrot",
-                "Parker",
-                "Johninator",
-                "Timmy"
-        },
-        { //Adverbs
-                "Gaily",
-                "Lethargically",
-                "Quietly",
-                "Unfortunately",
-                "Cleverly",
-                "Horribly",
-                "Recklessly",
-                "Casually",
-                "Wonderfully"
-        },
-        { //Verbs
-                "Walks",
-                "Talks",
-                "Barks",
-                "Screams",
-                "Perambulates",
-                "PicksUp",
-                "Drops",
-                "Drives",
-                "Lectures"
-        },
-        { //Prepositions
-                "To",
-                "From",
-                "By",
-                "ByWayOf",
-                "Through",
-                "Around",
-                "About",
-                "Out",
-                "OutOf",
-        },
-        { //Places
-                "School",
-                "University",
-                "Hell",
-                "Store",
-                "Classroom",
-                "Bus",
-                "Car",
-                "Airplane",
-                "JailCell"
-        },
-        {//Punctuation
-                ".",
-                "!",
-                "?",
-                "!?",
-                ";",
-                ",",
-                "~",
-                "...",
-                "..?"
-        }
-};
 
 inline std::vector<uint8_t> RyHash::string_to_bytes(const std::string& str) {
         return std::vector<uint8_t>(str.begin(), str.end());

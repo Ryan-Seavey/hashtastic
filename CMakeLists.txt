@@ -18,7 +18,8 @@ find_package(Boost 1.87.0 REQUIRED COMPONENTS
 
 add_executable(hashma main.cpp
         RyHash.h++
-        CLI.c++)
+        CLI.c++
+        evilDictionary.c++)
 
 add_executable(CLI CLI.c++ RyHash.h++)
 
