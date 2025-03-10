@@ -41,6 +41,7 @@ int main(int argc, char ** argv){
 
     if (vm.contains("string")) std::cout << "Here's stringinput!\n" << vm["string"].as<std::string>() << '\n';
 
+    std::cout << std::hex << RyHash::hashTime(RyHash::file_to_bytes(vm["f"].as<std::string>()), requested_bits) << '\n';
 
 
     return 0;

@@ -13,6 +13,7 @@ find_package(Boost 1.87.0 REQUIRED COMPONENTS
         math_c99
         program_options
         log
+        random
 )
 
 add_executable(hashma main.cpp
