@@ -83,7 +83,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
 
         std::vector<std::thread> threads;
         threads.reserve(threadCount);
-        std::atomic<u_int32_t> result{};
+        std::atomic<u_int32_t> result = 0x00000000;
         size_t beginOffset{};
         const std::function THETHREADJOB{[&jobs, &queuetex, &stop, &cv]
                 {
@@ -93,7 +93,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
                                 {
                                         std::unique_lock lock(queuetex);
                                         cv.wait(lock, [&stop, &jobs]{ return !jobs.empty() || stop; });
-                                        if (stop) return;
+                                        if (stop && jobs.empty()) return;
                                         myJob = std::move(jobs.front());
                                         jobs.pop();
                                 }
@@ -111,12 +111,12 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
                 {
                 std::span currBlock{theWholeEnchilada.data() + offset, BLOCK_SIZE};
                 processBlock(currBlock);
-                u_int32_t babyBoy = result;
+                u_int32_t babyBoy{};
                 for (unsigned char z : currBlock)
                 {
                         babyBoy = (babyBoy + z) * z;
                 }
-                result += babyBoy;
+                result.fetch_add(babyBoy, std::memory_order_relaxed);
         }
         };
 
@@ -128,7 +128,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
                 {
                         THEJOB(beginOffset);
                 });
-                cv.notify_one();
+                cv.notify_all();
         }
 
         //We've run out of jobs to queue, it's time to wrap it up
@@ -144,7 +144,6 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
                         t.join();
                 }
         }
-
 
         return result;
 }
