@@ -22,10 +22,12 @@ namespace evil
         "You can go on and on and on and on", "We don't make mistakes (make mistakes)", "We just have happy accidents",
         "You can do anything that you want to do", "Total power", "Sing along; have a good time.",
         "This is your world, you're the creator; find freedom on this canvas.",
-        "Believe that you can do it... 'Cause you can do it",
+        "Believe that you can do it... 'Cause you can do it", "I have gotten every kind of error signal in the book."
         "Human beings are cursed with the ability to think--only to a partial extent--rationally.",
         "The only decent type of intellectualism is faux.", "Men will never be free until the last king is strangled with the entrails of the last priest.",
         "There goes my hero; watch him as he goes.", "98", "7", "Deez Nuts", "Cancer", "Bucket of cream", "Hey Peter",
-
+        "Not to get political... but...", "Linux Winning?", "Dane", "Dirty Dominic Mysterio Park", "I hate Marvel Rivals",
+        "Yeah, I'm blasting Nine Inch Nails at 2 in the morning, what about it?", "SHA256 is going down!",
+        "Deadlock withdrawal...", "Name it, uhhh... um... name it W, I don't know."
     };
 }
