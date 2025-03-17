@@ -7,12 +7,12 @@ namespace evil
 {
     inline constexpr std::string_view dictionary[]{
         "Fat","Ugly","Silly","Radical","Eccentric","Stinky","Godly","Unusual","Suspicious",
-        "Pete","Dr. Sellers","Tom Petty","Miguel","Katie","Carrot","Parker","Johninator","Timmy"
+        "Pete","Dr. Sellers","Tom Petty","Miguel","Katie","Carrot","Parker","Johninator","Timmy",
         "Gaily","Lethargically","Quietly","Unfortunately","Cleverly","Horribly","Recklessly",
-        "Casually","Wonderfully","I have no mouth, and I must scream.","Fortnite","Peterson"
-        "Walks","Talks","Barks","Screams","Perambulates","PicksUp","Drops","Drives","Lectures"
-        "To","From","By","ByWayOf","Through","Around","About","Out","OutOf","OH YEAH!!!","\b\t\r\c"
-        "School","University","Hell","Store","Classroom","Bus","Car","Airplane","Jail Cell","Sigma"
+        "Casually","Wonderfully","I have no mouth, and I must scream.","Fortnite","Peterson",
+        "Walks","Talks","Barks","Screams","Perambulates","PicksUp","Drops","Drives","Lectures",
+        "To","From","By","ByWayOf","Through","Around","About","Out","OutOf","OH YEAH!!!","\b\t\r\c",
+        "School","University","Hell","Store","Classroom","Bus","Car","Airplane","Jail Cell","Sigma",
         ".","!","?","!?",";",",","~","...","..?","Alice","Bob","phap","poo poo pee pee","QWERTY",
         "Dvorak","C++","Rust is a terrible language!","I know you're reading this...",
         "Let's build a happy little cloud (Little cloud)","Lets build some happy little trees (Little trees)",
@@ -24,6 +24,8 @@ namespace evil
         "This is your world, you're the creator; find freedom on this canvas.",
         "Believe that you can do it... 'Cause you can do it",
         "Human beings are cursed with the ability to think--only to a partial extent--rationally.",
-        "The only decent type of intellectualism is faux",
+        "The only decent type of intellectualism is faux.", "Men will never be free until the last king is strangled with the entrails of the last priest.",
+        "There goes my hero; watch him as he goes.", "98", "7", "Deez Nuts", "Cancer", "Bucket of cream", "Hey Peter",
+
     };
 }

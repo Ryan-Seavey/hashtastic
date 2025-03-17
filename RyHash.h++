@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <fstream>
 #include "evilDictionary.c++"
+#include <thread>
 
 using cstring = const std::string;
 using cvec = const std::vector<std::vector<std::string>>;
@@ -33,13 +34,11 @@ namespace RyHash{
         //MAX_SENTENCE_BANK_SIZE
         extern inline const int MSBS;
         inline constexpr std::span dictionary{evil::dictionary, std::size(evil::dictionary)};
-        inline constexpr size_t BLOCK_SIZE{64 * 1024}; //64k
+        inline constexpr size_t BLOCK_SIZE{128 * 1024};
 
         //Yeah, we're Advanced Computer Security guys, of course we violate SOLID!
-        template<class T>
-        std::enable_if_t<std::is_arithmetic_v<T>, T> getRandom(unsigned seed);
         extern inline std::vector<uint8_t> string_to_bytes(const std::string&);
-        extern inline std::vector<uint8_t> file_to_bytes(const std::filesystem::path&);
+        extern inline std::vector<uint8_t> file_to_bytes(std::filesystem::path);
 
         /**
          * Doesn't hash with respect to time, rather: IT'S HASHING TIME.
@@ -47,7 +46,7 @@ namespace RyHash{
          * @param bits the size of the resultant hash
          * @return the spectacular hash!
          */
-        extern inline u_int32_t hashTime(std::span<const uint8_t> hashMe, size_t bits);
+        extern inline u_int32_t hashTime(std::vector<uint8_t>&& hashMe, size_t bits);
         /**
          * This is where the magic happens!
          * @param block what do you think?
@@ -58,11 +57,10 @@ namespace RyHash{
 
 
 //REMEMBER: OUTPUT SHOULD BE A HEX NUMBER OF LENGTH 8! (40320)
-extern inline u_int32_t RyHash::hashTime(std::span<const uint8_t> hashMe, size_t bits)
+extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilada, size_t bits)
 {
-        std::vector<uint8_t> theWholeEnchilada;
         //split cocksucker into parts.
-        size_t bin_size = hashMe.size();
+        size_t bin_size = theWholeEnchilada.size();
         //check divisibility
         float quotient = static_cast<float>(bin_size) / BLOCK_SIZE;
         size_t numberOfBlocksWeWillNeed = std::ceil(quotient);
@@ -71,51 +69,60 @@ extern inline u_int32_t RyHash::hashTime(std::span<const uint8_t> hashMe, size_t
         //reserve the space we will need.
         theWholeEnchilada.reserve(numberOfBlocksWeWillNeed * BLOCK_SIZE);
         //slap the entirety of hashMe into the true vector
-        std::ranges::copy(std::as_const(hashMe), std::insert_iterator(theWholeEnchilada, theWholeEnchilada.begin()));
         if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
 
-        processBlock(theWholeEnchilada);
-        u_int32_t result{};
-        for (const auto& z : theWholeEnchilada)
+        const unsigned threadCount = std::thread::hardware_concurrency();
+        std::counting_semaphore semaphore(threadCount);
+
+        std::vector<std::thread> threads;
+        threads.reserve(numberOfBlocksWeWillNeed);
+        std::atomic<u_int32_t> result{};
+
+        for (size_t i = 0; i < numberOfBlocksWeWillNeed; ++i)
         {
-                result += z;
-                result *= z;
+                semaphore.acquire();
+                size_t beginOffset = BLOCK_SIZE * i;
+                threads.emplace_back([&semaphore, &theWholeEnchilada, beginOffset, &result]
+                {
+                        std::span currBlock{theWholeEnchilada.data() + beginOffset, BLOCK_SIZE};
+                        processBlock(currBlock);
+                        u_int32_t babyBoy = result;
+                        for (unsigned char z : currBlock)
+                        {
+                                babyBoy = (babyBoy + z) * z;
+                        }
+                        result += babyBoy;
+                        semaphore.release();
+                });
         }
+
+        for (auto& t : threads) {
+                if (t.joinable()) {
+                        t.join();
+                }
+        }
+
+
         return result;
 }
 
 inline void RyHash::processBlock(std::span<uint8_t> block)
 {
-        auto half = block.begin() + block.size()/2;
-        auto bend = block.rend();
-        for (int i = 0; i < block.size(); ++i)
+        const size_t bsize = block.size();
+        auto half = block.begin() + bsize/2ul;
+        auto bend = block.rbegin();
+        static constexpr size_t dsize = dictionary.size();
+        const auto halfEnd = block.end();
+        for (int i = 0; i < bsize; ++i)
         {
-                block[i] ^= getRandom<uint8_t>(block[i % block.size()]);
+                const auto& word = dictionary[(*bend % dsize)];
+                const auto& letter = word[*half % word.length()];
+                block[i] ^= letter;
                 ++bend, ++half;
-                if (half == block.end()) half = block.begin();
+                if (half == halfEnd) half = block.begin();
         }
 }
 
-template<class T>
-std::enable_if_t<std::is_arithmetic_v<T>, T>
-RyHash::getRandom(const unsigned seed)
-{
-      thread_local boost::random::mt11213b engine;
-        if constexpr(std::is_integral_v<T>)
-        {
-                engine.seed(seed);
-                boost::random::uniform_int_distribution<T> dist;
-                //if (nobodyIsNull) dist.param(boost::random::uniform_int_distribution<T>(a,b));
-                return dist(engine);
-        } else if constexpr (std::is_floating_point_v<T>)
-        {
-                engine.seed(seed);
-                boost::random::uniform_real_distribution<T> dist;
-                //if (nobodyIsNull) dist.param(typename boost::random::uniform_real_distribution<T>::param_type(a,b));
-                return dist(engine);
-        }
-        return{};
-}
 
 
 
@@ -136,10 +143,10 @@ RyHash::getRandom(const unsigned seed)
 
 
 inline std::vector<uint8_t> RyHash::string_to_bytes(const std::string& str) {
-        return std::vector<uint8_t>(str.begin(), str.end());
+        return {str.begin(), str.end()};
 }
 
-inline std::vector<uint8_t> RyHash::file_to_bytes(const std::filesystem::path& filename){
+inline std::vector<uint8_t> RyHash::file_to_bytes(std::filesystem::path filename){
         std::ifstream file{filename, std::ios::binary | std::ios::ate};
         if (not file) throw std::runtime_error("File not found, hombre.");
 
