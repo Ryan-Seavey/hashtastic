@@ -17,9 +17,12 @@
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/random.hpp>
 #include <climits>
+#include <condition_variable>
 #include <span>
 #include <filesystem>
 #include <fstream>
+#include <queue>
+
 #include "evilDictionary.c++"
 #include <thread>
 
@@ -72,29 +75,69 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
 
         const unsigned threadCount = std::thread::hardware_concurrency();
-        std::counting_semaphore semaphore(threadCount);
+        std::queue<std::function<void()>> jobs;
+        std::mutex queuetex;
+
+        std::atomic<bool> stop{};
+        std::condition_variable cv;
 
         std::vector<std::thread> threads;
-        threads.reserve(numberOfBlocksWeWillNeed);
+        threads.reserve(threadCount);
         std::atomic<u_int32_t> result{};
+        size_t beginOffset{};
+        const std::function THETHREADJOB{[&jobs, &queuetex, &stop, &cv]
+                {
+                        while (true)
+                        {
+                                std::function<void()> myJob;
+                                {
+                                        std::unique_lock lock(queuetex);
+                                        cv.wait(lock, [&stop, &jobs]{ return !jobs.empty() || stop; });
+                                        if (stop) return;
+                                        myJob = std::move(jobs.front());
+                                        jobs.pop();
+                                }
+                                myJob();
+                        }
+                }
+        };
+        //start the threads
+        for (int i = 0 ; i < threads.capacity(); ++i)
+        {
+                threads.emplace_back(THETHREADJOB);
+        }
 
+        const std::function THEJOB{[&](size_t offset)
+                {
+                std::span currBlock{theWholeEnchilada.data() + offset, BLOCK_SIZE};
+                processBlock(currBlock);
+                u_int32_t babyBoy = result;
+                for (unsigned char z : currBlock)
+                {
+                        babyBoy = (babyBoy + z) * z;
+                }
+                result += babyBoy;
+        }
+        };
+
+        //fill the queue
         for (size_t i = 0; i < numberOfBlocksWeWillNeed; ++i)
         {
-                semaphore.acquire();
-                size_t beginOffset = BLOCK_SIZE * i;
-                threads.emplace_back([&semaphore, &theWholeEnchilada, beginOffset, &result]
+                beginOffset = BLOCK_SIZE * i;
+                jobs.emplace([THEJOB, beginOffset]
                 {
-                        std::span currBlock{theWholeEnchilada.data() + beginOffset, BLOCK_SIZE};
-                        processBlock(currBlock);
-                        u_int32_t babyBoy = result;
-                        for (unsigned char z : currBlock)
-                        {
-                                babyBoy = (babyBoy + z) * z;
-                        }
-                        result += babyBoy;
-                        semaphore.release();
+                        THEJOB(beginOffset);
                 });
+                cv.notify_one();
         }
+
+        //We've run out of jobs to queue, it's time to wrap it up
+        {
+                std::lock_guard lock(queuetex);
+                stop = true;
+        }
+        cv.notify_all();
+
 
         for (auto& t : threads) {
                 if (t.joinable()) {
@@ -115,8 +158,11 @@ inline void RyHash::processBlock(std::span<uint8_t> block)
         const auto halfEnd = block.end();
         for (int i = 0; i < bsize; ++i)
         {
-                const auto& word = dictionary[(*bend % dsize)];
-                const auto& letter = word[*half % word.length()];
+                size_t bendVal = *bend;
+                size_t halfVal = *half;
+                const auto& word = dictionary[ bendVal > dsize ? bendVal % dsize : bendVal];
+                size_t wordLen = word.length();
+                const auto& letter = word[halfVal > wordLen ? halfVal % word.length() : halfVal];
                 block[i] ^= letter;
                 ++bend, ++half;
                 if (half == halfEnd) half = block.begin();
