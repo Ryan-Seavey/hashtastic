@@ -14,6 +14,7 @@ find_package(Boost 1.87.0 REQUIRED COMPONENTS
         program_options
         log
         random
+        thread
 )
 
 add_executable(hashma main.cpp

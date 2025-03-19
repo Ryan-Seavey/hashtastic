@@ -16,6 +16,8 @@
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/random.hpp>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
 #include <climits>
 #include <condition_variable>
 #include <span>
@@ -73,42 +75,23 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         theWholeEnchilada.reserve(numberOfBlocksWeWillNeed * BLOCK_SIZE);
         //slap the entirety of hashMe into the true vector
         if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
-
+        std::cerr << "We'll need " << numberOfBlocksWeWillNeed << " blocks to get this done.\n"
+        << "With a total byte size of " << numberOfBlocksWeWillNeed * BLOCK_SIZE << '\n';
         const unsigned threadCount = std::thread::hardware_concurrency();
-        std::queue<std::function<void()>> jobs;
-        std::mutex queuetex;
+        boost::asio::thread_pool threads(threadCount);
 
-        std::atomic<bool> stop{};
-        std::condition_variable cv;
 
-        std::vector<std::thread> threads;
-        threads.reserve(threadCount);
+
+
+
         std::atomic<u_int32_t> result = 0x00000000;
+        std::atomic<size_t> completedThreads = 0;
         size_t beginOffset{};
-        const std::function THETHREADJOB{[&jobs, &queuetex, &stop, &cv]
-                {
-                        while (true)
-                        {
-                                std::function<void()> myJob;
-                                {
-                                        std::unique_lock lock(queuetex);
-                                        cv.wait(lock, [&stop, &jobs]{ return !jobs.empty() || stop; });
-                                        if (stop && jobs.empty()) return;
-                                        myJob = std::move(jobs.front());
-                                        jobs.pop();
-                                }
-                                myJob();
-                        }
-                }
-        };
-        //start the threads
-        for (int i = 0 ; i < threads.capacity(); ++i)
-        {
-                threads.emplace_back(THETHREADJOB);
-        }
+
 
         const std::function THEJOB{[&](size_t offset)
                 {
+                std::cerr << "Thread processing block at offset " << offset << '\n';
                 std::span currBlock{theWholeEnchilada.data() + offset, BLOCK_SIZE};
                 processBlock(currBlock);
                 u_int32_t babyBoy{};
@@ -117,6 +100,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
                         babyBoy = (babyBoy + z) * z;
                 }
                 result.fetch_add(babyBoy, std::memory_order_relaxed);
+                std::cerr << "Thread at offset: " << offset << " finished execution.\t| Completed jobs: " << ++completedThreads << '\n';
         }
         };
 
@@ -124,26 +108,13 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         for (size_t i = 0; i < numberOfBlocksWeWillNeed; ++i)
         {
                 beginOffset = BLOCK_SIZE * i;
-                jobs.emplace([THEJOB, beginOffset]
-                {
-                        THEJOB(beginOffset);
-                });
-                cv.notify_all();
+                boost::asio::post(threads, [THEJOB, beginOffset]{THEJOB(beginOffset);});
+                std::cerr << "Enqueued job for offset " << beginOffset << '\n';
         }
 
-        //We've run out of jobs to queue, it's time to wrap it up
-        {
-                std::lock_guard lock(queuetex);
-                stop = true;
-        }
-        cv.notify_all();
+        threads.join();
 
-
-        for (auto& t : threads) {
-                if (t.joinable()) {
-                        t.join();
-                }
-        }
+        std::cerr << "All threads have--purportedly--completed\n";
 
         return result;
 }
