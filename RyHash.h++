@@ -75,8 +75,6 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         theWholeEnchilada.reserve(numberOfBlocksWeWillNeed * BLOCK_SIZE);
         //slap the entirety of hashMe into the true vector
         if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
-        std::cerr << "We'll need " << numberOfBlocksWeWillNeed << " blocks to get this done.\n"
-        << "With a total byte size of " << numberOfBlocksWeWillNeed * BLOCK_SIZE << '\n';
         const unsigned threadCount = std::thread::hardware_concurrency();
         boost::asio::thread_pool threads(threadCount);
 
@@ -85,57 +83,46 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
 
 
         std::atomic<u_int32_t> result = 0x00000000;
-        std::atomic<size_t> completedThreads = 0;
-        size_t beginOffset{};
-
 
         const std::function THEJOB{[&](size_t offset)
                 {
-                std::cerr << "Thread processing block at offset " << offset << '\n';
                 std::span currBlock{theWholeEnchilada.data() + offset, BLOCK_SIZE};
                 processBlock(currBlock);
-                u_int32_t babyBoy{};
+                u_int32_t babyBoy{~result};
                 for (unsigned char z : currBlock)
                 {
-                        babyBoy = (babyBoy + z) * z;
+                        babyBoy ^= std::rotl(babyBoy, z) + ~(z * 0x1337u);
                 }
-                result.fetch_add(babyBoy, std::memory_order_relaxed);
-                std::cerr << "Thread at offset: " << offset << " finished execution.\t| Completed jobs: " << ++completedThreads << '\n';
+                result ^= babyBoy;
         }
         };
 
         //fill the queue
         for (size_t i = 0; i < numberOfBlocksWeWillNeed; ++i)
         {
-                beginOffset = BLOCK_SIZE * i;
+                size_t beginOffset = BLOCK_SIZE * i;
                 boost::asio::post(threads, [THEJOB, beginOffset]{THEJOB(beginOffset);});
-                std::cerr << "Enqueued job for offset " << beginOffset << '\n';
         }
 
         threads.join();
-
-        std::cerr << "All threads have--purportedly--completed\n";
 
         return result;
 }
 
 inline void RyHash::processBlock(std::span<uint8_t> block)
 {
-        const size_t bsize = block.size();
-        auto half = block.begin() + bsize/2ul;
-        auto bend = block.rbegin();
-        static constexpr size_t dsize = dictionary.size();
-        const auto halfEnd = block.end();
-        for (int i = 0; i < bsize; ++i)
+        const std::string_view spice = dictionary[block[BLOCK_SIZE/4] % dictionary.size()];
+        const size_t spicelen = spice.length();
+
+        using MOD_TYPE = uint64_t;
+        constexpr size_t FIT = sizeof(MOD_TYPE) / sizeof(uint8_t);
+        for (int i = 0; i < BLOCK_SIZE; i += FIT)
         {
-                size_t bendVal = *bend;
-                size_t halfVal = *half;
-                const auto& word = dictionary[ bendVal > dsize ? bendVal % dsize : bendVal];
-                size_t wordLen = word.length();
-                const auto& letter = word[halfVal > wordLen ? halfVal % word.length() : halfVal];
-                block[i] ^= letter;
-                ++bend, ++half;
-                if (half == halfEnd) half = block.begin();
+                MOD_TYPE full{};
+                //stuffing time
+                for (uint8_t index = 0; index < FIT; index++) (full <<= 8) |= (block[i + index] ^ spice[index % spicelen]);
+                full = std::rotr(full, spice[full % spicelen]);
+                std::memcpy(&block[i], &full, sizeof(full));
         }
 }
 
