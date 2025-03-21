@@ -11,7 +11,7 @@ namespace evil
         "Gaily","Lethargically","Quietly","Unfortunately","Cleverly","Horribly","Recklessly",
         "Casually","Wonderfully","I have no mouth, and I must scream.","Fortnite","Peterson",
         "Walks","Talks","Barks","Screams","Perambulates","PicksUp","Drops","Drives","Lectures",
-        "To","From","By","ByWayOf","Through","Around","About","Out","OutOf","OH YEAH!!!","\b\t\r\c",
+        "To","From","By","ByWayOf","Through","Around","About","Out","OutOf","OH YEAH!!!","\b\t\r\\c",
         "School","University","Hell","Store","Classroom","Bus","Car","Airplane","Jail Cell","Sigma",
         ".","!","?","!?",";",",","~","...","..?","Alice","Bob","phap","poo poo pee pee","QWERTY",
         "Dvorak","C++","Rust is a terrible language!","I know you're reading this...",

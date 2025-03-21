@@ -5,8 +5,14 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_COMPILER clang++-18)
 add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_options(-O3 -march=native)
+    message("Release time!")
+else()
+    message("Not release.")
+endif()
 
-find_package(Boost 1.87.0 REQUIRED COMPONENTS
+    find_package(Boost 1.87.0 REQUIRED COMPONENTS
         system
         filesystem
         math_tr1

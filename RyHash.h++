@@ -68,8 +68,8 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         size_t bin_size = theWholeEnchilada.size();
         //check divisibility
         float quotient = static_cast<float>(bin_size) / BLOCK_SIZE;
-        size_t numberOfBlocksWeWillNeed = std::ceil(quotient);
-        bool paddingNeeded = (numberOfBlocksWeWillNeed - static_cast<int>(quotient));
+        size_t numberOfBlocksWeWillNeed = static_cast<size_t>(std::ceil(quotient));
+        bool paddingNeeded = (numberOfBlocksWeWillNeed - static_cast<size_t>(quotient));
 
         //reserve the space we will need.
         theWholeEnchilada.reserve(numberOfBlocksWeWillNeed * BLOCK_SIZE);
@@ -116,11 +116,11 @@ inline void RyHash::processBlock(std::span<uint8_t> block)
 
         using MOD_TYPE = uint64_t;
         constexpr size_t FIT = sizeof(MOD_TYPE) / sizeof(uint8_t);
-        for (int i = 0; i < BLOCK_SIZE; i += FIT)
+        for (size_t i = 0; i < BLOCK_SIZE; i += FIT)
         {
                 MOD_TYPE full{};
                 //stuffing time
-                for (uint8_t index = 0; index < FIT; index++) (full <<= 8) |= (block[i + index] ^ spice[index % spicelen]);
+                for (size_t index = 0; index < FIT; index++) (full <<= 8) |= static_cast<MOD_TYPE>(block[i + index] ^ spice[index % spicelen]);
                 full = std::rotr(full, spice[full % spicelen]);
                 std::memcpy(&block[i], &full, sizeof(full));
         }
@@ -155,7 +155,7 @@ inline std::vector<uint8_t> RyHash::file_to_bytes(std::filesystem::path filename
 
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
-        std::vector<uint8_t> buffer(size);
+        std::vector<uint8_t> buffer(static_cast<size_t>(size));
         file.read(reinterpret_cast<char *>(buffer.data()), size);
         return buffer;
 }
