@@ -7,30 +7,24 @@
 
 #include <string>
 #include <cmath>
-#include <bit>
-#include <numbers>
 #include <random>
 #include <array>
-#include <concepts>
-#include <boost/math/special_functions/fibonacci.hpp>
-#include <boost/math/special_functions/factorials.hpp>
-#include <boost/multiprecision/cpp_bin_float.hpp>
-#include <boost/random.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
-#include <climits>
-#include <condition_variable>
-#include <span>
 #include <filesystem>
 #include <fstream>
 #include <queue>
+#include <thread>
+#include <functional>
+#include <atomic>
+#include <span>
+
+#include <asio.hpp>
+#include <asio/thread_pool.hpp>
 
 #include "evilDictionary.c++"
-#include <thread>
+
 
 using cstring = const std::string;
 using cvec = const std::vector<std::vector<std::string>>;
-using cvfloat = boost::multiprecision::cpp_bin_float<200>;
 using hashVal = uint32_t;
 #define ss static cstring
 
@@ -76,7 +70,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         //slap the entirety of hashMe into the true vector
         if (paddingNeeded) theWholeEnchilada.resize(numberOfBlocksWeWillNeed * BLOCK_SIZE, 0);
         const unsigned threadCount = std::thread::hardware_concurrency();
-        boost::asio::thread_pool threads(threadCount);
+        asio::thread_pool threads(threadCount);
 
 
 
@@ -101,7 +95,7 @@ extern inline u_int32_t RyHash::hashTime(std::vector<uint8_t>&& theWholeEnchilad
         for (size_t i = 0; i < numberOfBlocksWeWillNeed; ++i)
         {
                 size_t beginOffset = BLOCK_SIZE * i;
-                boost::asio::post(threads, [THEJOB, beginOffset]{THEJOB(beginOffset);});
+                asio::post(threads, [THEJOB, beginOffset]{THEJOB(beginOffset);});
         }
 
         threads.join();
