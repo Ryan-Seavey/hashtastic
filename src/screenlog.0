@@ -1,0 +1,46 @@
+[4mukko[24m:[1m~/security3/hashma/src[0m% ./smasher StudentHash
+-------------------------------------------------------------------------------
+--- Testing StudentHash (The best hash algorithm ever written!)
+
+[[[ Speed Tests ]]]
+
+Bulk speed test - 262144-byte keys
+Alignment  0 -  0.002 bytes/cycle -    5.99 MiB/sec @ 3 ghz
+Alignment  1 -  0.002 bytes/cycle -    5.97 MiB/sec @ 3 ghz
+Alignment  2 -  0.002 bytes/cycle -    5.98 MiB/sec @ 3 ghz
+Alignment  3 -  0.002 bytes/cycle -    5.99 MiB/sec @ 3 ghz
+Alignment  4 -  0.002 bytes/cycle -    5.97 MiB/sec @ 3 ghz
+Alignment  5 -  0.002 bytes/cycle -    5.98 MiB/sec @ 3 ghz
+Alignment  6 -  0.002 bytes/cycle -    5.98 MiB/sec @ 3 ghz
+Alignment  7 -  0.002 bytes/cycle -    5.99 MiB/sec @ 3 ghz
+
+Small key speed test -    1-byte keys - 50558935.14 cycles/hash
+Small key speed test -    2-byte keys - 28632015.12 cycles/hash
+Small key speed test -    3-byte keys - 28624650.08 cycles/hash
+Small key speed test -    4-byte keys - 28627228.16 cycles/hash
+Small key speed test -    5-byte keys - 28624546.24 cycles/hash
+Small key speed test -    6-byte keys - 28612703.15 cycles/hash
+Small key speed test -    7-byte keys - 28640289.11 cycles/hash
+Small key speed test -    8-byte keys - 28657481.53 cycles/hash
+Small key speed test -    9-byte keys - 34002905.74 cycles/hash
+Small key speed test -   10-byte keys - 34850996.83 cycles/hash
+Small key speed test -   11-byte keys - 28857373.73 cycles/hash
+[4mukko[24m:[1m~/security3/hashma/src[0m% cd b
+bitflip.py* build/      
+[4mukko[24m:[1m~/security3/hashma/src[0m% cd build/
+[4mukko[24m:[1m~/security3/hashma/src/build[0m% ./smasher StudentHash
+-------------------------------------------------------------------------------
+--- Testing StudentHash (The best hash algorithm ever written!)
+
+[[[ Speed Tests ]]]
+
+Bulk speed test - 262144-byte keys
+Alignment  0 -  0.008 bytes/cycle -   22.86 MiB/sec @ 3 ghz
+Alignment  1 -  0.008 bytes/cycle -   22.82 MiB/sec @ 3 ghz
+Alignment  2 -  0.008 bytes/cycle -   22.82 MiB/sec @ 3 ghz
+Alignment  3 -  0.008 bytes/cycle -   22.78 MiB/sec @ 3 ghz
+Alignment  4 -  0.008 bytes/cycle -   23.03 MiB/sec @ 3 ghz
+Alignment  5 -  0.008 bytes/cycle -   22.88 MiB/sec @ 3 ghz
+Alignment  6 -  0.008 bytes/cycle -   22.78 MiB/sec @ 3 ghz
+Alignment  7 -  0.008 bytes/cycle -   22.86 MiB/sec @ 3 ghz
+

@@ -567,7 +567,7 @@ int main ( int argc, char ** argv )
 
   // Code runs on the 3rd CPU by default
 
-  SetAffinity((1 << 2));
+  //SetAffinity((1 << 2));
 
   /* SelfTest(); */
 
